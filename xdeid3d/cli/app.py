@@ -244,6 +244,46 @@ cli.add_command(benchmark_commands)
 cli.add_command(utils_commands)
 
 
+@cli.command()
+@click.option(
+    "-d", "--experiments-dir",
+    type=click.Path(exists=True),
+    default="./experiments",
+    help="Directory containing experiments"
+)
+@click.option(
+    "-p", "--port",
+    type=int,
+    default=5001,
+    help="Port to run viewer on (default: 5001)"
+)
+@click.option(
+    "--host",
+    type=str,
+    default="0.0.0.0",
+    help="Host to bind to (default: 0.0.0.0)"
+)
+@click.pass_context
+def viewer(ctx: click.Context, experiments_dir: str, port: int, host: str) -> None:
+    """Launch the experiments viewer web interface."""
+    from xdeid3d.viewer import create_app, ViewerConfig
+
+    config = ViewerConfig(
+        experiments_dir=experiments_dir,
+        host=host,
+        port=port,
+        debug=ctx.obj.get("verbose", 0) > 0,
+    )
+
+    app = create_app(config)
+
+    click.echo(f"Starting X-DeID3D Experiments Viewer")
+    click.echo(f"Experiments directory: {experiments_dir}")
+    click.echo(f"Access the viewer at: http://localhost:{port}")
+
+    app.run(debug=config.debug, host=host, port=port)
+
+
 def main() -> int:
     """Main entry point for CLI."""
     try:

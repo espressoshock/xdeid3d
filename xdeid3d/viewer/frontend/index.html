@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-DeID3D Experiments Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #16213e;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            color: #e94560;
+        }
+
+        .container {
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #16213e;
+            padding: 1rem;
+            overflow-y: auto;
+            border-right: 1px solid #0f3460;
+        }
+
+        .main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .experiment-list {
+            list-style: none;
+        }
+
+        .experiment-item {
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 0;
+            background: #0f3460;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .experiment-item:hover {
+            background: #1a4a7e;
+        }
+
+        .experiment-item.active {
+            background: #e94560;
+        }
+
+        .experiment-item .cfg {
+            font-weight: bold;
+        }
+
+        .experiment-item .seed {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .experiment-item .badges {
+            margin-top: 0.25rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            margin-right: 4px;
+        }
+
+        .badge.video { background: #4a6fa5; }
+        .badge.metrics { background: #4a9f4a; }
+        .badge.heatmap { background: #9f4a9f; }
+
+        .detail-section {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #e94560;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 0.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-card {
+            background: #0f3460;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .metric-card .name {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .media-item {
+            background: #0f3460;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .media-item video,
+        .media-item img {
+            width: 100%;
+            display: block;
+        }
+
+        .media-item .caption {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            opacity: 0.6;
+        }
+
+        .error {
+            color: #e94560;
+            padding: 1rem;
+            background: rgba(233, 69, 96, 0.1);
+            border-radius: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.6;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f3460;
+            border: 1px solid #1a4a7e;
+            border-radius: 4px;
+            color: #eee;
+            margin-bottom: 1rem;
+        }
+
+        .search-box::placeholder {
+            color: #888;
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            opacity: 0.8;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            background: #0f3460;
+            border: 1px solid #1a4a7e;
+            border-radius: 4px;
+            color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>X-DeID3D Experiments Viewer</h1>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <input type="text" class="search-box" id="search" placeholder="Search experiments...">
+
+            <div class="filter-group">
+                <label>Configuration</label>
+                <select id="cfg-filter">
+                    <option value="">All Configurations</option>
+                </select>
+            </div>
+
+            <ul class="experiment-list" id="experiment-list">
+                <li class="loading">Loading experiments...</li>
+            </ul>
+        </aside>
+
+        <main class="main" id="main-content">
+            <div class="empty-state">
+                <h2>Welcome to X-DeID3D Experiments Viewer</h2>
+                <p>Select an experiment from the sidebar to view details.</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // State
+        let experiments = [];
+        let currentExperiment = null;
+
+        // DOM elements
+        const experimentList = document.getElementById('experiment-list');
+        const mainContent = document.getElementById('main-content');
+        const searchBox = document.getElementById('search');
+        const cfgFilter = document.getElementById('cfg-filter');
+
+        // API calls
+        async function fetchExperiments() {
+            try {
+                const response = await fetch('/api/experiments');
+                const data = await response.json();
+                experiments = data.experiments || [];
+                updateExperimentList();
+                updateFilters();
+            } catch (error) {
+                experimentList.innerHTML = '<li class="error">Failed to load experiments</li>';
+                console.error('Error fetching experiments:', error);
+            }
+        }
+
+        async function fetchExperimentDetails(cfg, seed) {
+            try {
+                const response = await fetch(`/api/experiments/${cfg}/${seed}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching experiment details:', error);
+                return null;
+            }
+        }
+
+        // UI updates
+        function updateFilters() {
+            const configs = [...new Set(experiments.map(e => e.cfg))];
+            cfgFilter.innerHTML = '<option value="">All Configurations</option>' +
+                configs.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function updateExperimentList() {
+            const searchTerm = searchBox.value.toLowerCase();
+            const selectedCfg = cfgFilter.value;
+
+            const filtered = experiments.filter(exp => {
+                const matchesSearch = exp.cfg.toLowerCase().includes(searchTerm) ||
+                    String(exp.seed).includes(searchTerm);
+                const matchesCfg = !selectedCfg || exp.cfg === selectedCfg;
+                return matchesSearch && matchesCfg;
+            });
+
+            if (filtered.length === 0) {
+                experimentList.innerHTML = '<li class="empty-state">No experiments found</li>';
+                return;
+            }
+
+            experimentList.innerHTML = filtered.map(exp => `
+                <li class="experiment-item ${currentExperiment?.cfg === exp.cfg && currentExperiment?.seed === exp.seed ? 'active' : ''}"
+                    data-cfg="${exp.cfg}" data-seed="${exp.seed}">
+                    <div class="cfg">${exp.cfg}</div>
+                    <div class="seed">Seed: ${exp.seed}</div>
+                    <div class="badges">
+                        ${exp.has_video ? '<span class="badge video">Video</span>' : ''}
+                        ${exp.has_metrics ? '<span class="badge metrics">Metrics</span>' : ''}
+                        ${exp.has_heatmap ? '<span class="badge heatmap">Heatmap</span>' : ''}
+                    </div>
+                </li>
+            `).join('');
+
+            // Add click handlers
+            document.querySelectorAll('.experiment-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const cfg = item.dataset.cfg;
+                    const seed = parseInt(item.dataset.seed);
+                    selectExperiment(cfg, seed);
+                });
+            });
+        }
+
+        async function selectExperiment(cfg, seed) {
+            mainContent.innerHTML = '<div class="loading">Loading experiment details...</div>';
+
+            const details = await fetchExperimentDetails(cfg, seed);
+            if (!details) {
+                mainContent.innerHTML = '<div class="error">Failed to load experiment details</div>';
+                return;
+            }
+
+            currentExperiment = { cfg, seed };
+            updateExperimentList();
+            renderExperimentDetails(details);
+        }
+
+        function renderExperimentDetails(details) {
+            let html = `
+                <div class="detail-section">
+                    <h2>${details.cfg} - Seed ${details.seed}</h2>
+                    <p>Path: ${details.path}</p>
+                </div>
+            `;
+
+            // Metrics
+            if (details.summary) {
+                html += `
+                    <div class="detail-section">
+                        <h2>Metrics Summary</h2>
+                        <div class="metrics-grid">
+                            ${Object.entries(details.summary).map(([name, stats]) => `
+                                <div class="metric-card">
+                                    <div class="name">${name}</div>
+                                    <div class="value">${stats.mean.toFixed(4)}</div>
+                                    <div class="name">± ${stats.std.toFixed(4)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Videos
+            if (details.media?.videos?.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <h2>Videos</h2>
+                        <div class="media-grid">
+                            ${details.media.videos.map(path => `
+                                <div class="media-item">
+                                    <video controls>
+                                        <source src="/api/media/${path}" type="video/mp4">
+                                    </video>
+                                    <div class="caption">${path.split('/').pop()}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Images
+            if (details.media?.images?.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <h2>Images</h2>
+                        <div class="media-grid">
+                            ${details.media.images.slice(0, 12).map(path => `
+                                <div class="media-item">
+                                    <img src="/api/media/${path}" alt="${path}">
+                                    <div class="caption">${path.split('/').pop()}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            mainContent.innerHTML = html;
+        }
+
+        // Event listeners
+        searchBox.addEventListener('input', updateExperimentList);
+        cfgFilter.addEventListener('change', updateExperimentList);
+
+        // Initialize
+        fetchExperiments();
+    </script>
+</body>
+</html>
