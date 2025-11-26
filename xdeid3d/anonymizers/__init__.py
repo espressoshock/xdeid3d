@@ -28,6 +28,14 @@ from xdeid3d.anonymizers.registry import (
     create_anonymizer,
 )
 
+# Import adapters to trigger registration
+from xdeid3d.anonymizers.adapters import (
+    BlurAnonymizer,
+    PixelateAnonymizer,
+    BlackoutAnonymizer,
+    IdentityAnonymizer,
+)
+
 __all__ = [
     # Base classes
     "AnonymizerProtocol",
@@ -38,4 +46,9 @@ __all__ = [
     "AnonymizerRegistry",
     "register_anonymizer",
     "create_anonymizer",
+    # Built-in adapters
+    "BlurAnonymizer",
+    "PixelateAnonymizer",
+    "BlackoutAnonymizer",
+    "IdentityAnonymizer",
 ]
