@@ -35,6 +35,15 @@ def __getattr__(name: str):
     elif name == "Config":
         from xdeid3d.config.schema import Config
         return Config
+    elif name == "synthesis":
+        from xdeid3d import synthesis
+        return synthesis
+    elif name == "CameraPoseSampler":
+        from xdeid3d.synthesis.camera import CameraPoseSampler
+        return CameraPoseSampler
+    elif name == "BasicRenderer":
+        from xdeid3d.synthesis.rendering import BasicRenderer
+        return BasicRenderer
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
@@ -47,4 +56,7 @@ __all__ = [
     "MetricRegistry",
     "EvaluationPipeline",
     "Config",
+    "synthesis",
+    "CameraPoseSampler",
+    "BasicRenderer",
 ]
