@@ -472,6 +472,145 @@ def _create_sphere_mesh(resolution: int = 50) -> tuple:
     return vertices, np.array(faces, dtype=np.int32)
 
 
+@generate.command("project")
+@click.argument("input_image", type=click.Path(exists=True))
+@click.argument("generator_path", type=click.Path(exists=True))
+@click.option(
+    "-o", "--output",
+    type=click.Path(),
+    default=None,
+    help="Output directory for results"
+)
+@click.option(
+    "--method",
+    type=click.Choice(["latent", "pti"]),
+    default="latent",
+    help="Projection method (default: latent)"
+)
+@click.option(
+    "--steps",
+    type=int,
+    default=1000,
+    help="Number of optimization steps (default: 1000)"
+)
+@click.option(
+    "--lr",
+    type=float,
+    default=0.1,
+    help="Learning rate (default: 0.1)"
+)
+@click.option(
+    "--device",
+    type=str,
+    default=None,
+    help="Device to use (cpu, cuda)"
+)
+@click.pass_context
+def generate_project(
+    ctx: click.Context,
+    input_image: str,
+    generator_path: str,
+    output: Optional[str],
+    method: str,
+    steps: int,
+    lr: float,
+    device: Optional[str],
+) -> None:
+    """
+    Project an image into generator latent space.
+
+    Uses optimization-based methods to find the latent code
+    that best reconstructs the input image.
+
+    INPUT_IMAGE: Path to target image
+    GENERATOR_PATH: Path to generator checkpoint
+    """
+    import numpy as np
+
+    from xdeid3d.synthesis.projector import (
+        create_projector,
+        ProjectionConfig,
+    )
+    from xdeid3d.utils.io import load_image, save_image
+
+    input_path = validate_path(input_image, must_exist=True, must_be_file=True)
+    gen_path = validate_path(generator_path, must_exist=True, must_be_file=True)
+
+    # Determine output directory
+    if output is None:
+        output_dir = input_path.parent / "projection"
+    else:
+        output_dir = Path(output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Determine device
+    if device is None:
+        device = get_device(ctx)
+
+    click.echo(f"Loading generator from {gen_path}")
+    click.echo(f"Projection method: {method}")
+    click.echo(f"Device: {device}")
+
+    # Load generator
+    try:
+        import torch
+        import pickle
+
+        with open(gen_path, 'rb') as f:
+            generator = pickle.load(f)['G_ema']
+        generator = generator.to(device)
+        generator.eval()
+
+    except Exception as e:
+        raise click.ClickException(f"Failed to load generator: {e}")
+
+    # Load target image
+    click.echo(f"Loading target image: {input_path}")
+    target_image = load_image(str(input_path), color_space="RGB")
+
+    # Create projector
+    projector = create_projector(
+        generator,
+        method=method,
+        device=device,
+    )
+
+    # Configure projection
+    config = ProjectionConfig(
+        num_steps=steps,
+        learning_rate=lr,
+        verbose=ctx.obj.get("verbose", 0) > 0,
+    )
+
+    # Run projection
+    click.echo(f"Running {method} projection with {steps} steps...")
+    result = projector.project(target_image, config)
+
+    # Save results
+    click.echo("Saving results...")
+
+    # Save latent code
+    latent_path = output_dir / "latent.npz"
+    np.savez(latent_path, latent=result.latent)
+    click.echo(f"  Latent code: {latent_path}")
+
+    # Save reconstruction
+    recon_path = output_dir / "reconstruction.png"
+    save_image(result.reconstruction, recon_path)
+    click.echo(f"  Reconstruction: {recon_path}")
+
+    # Save loss history
+    loss_path = output_dir / "loss_history.npz"
+    np.savez(loss_path, loss=np.array(result.loss_history))
+    click.echo(f"  Loss history: {loss_path}")
+
+    # Print summary
+    click.echo("\nProjection Summary:")
+    click.echo(f"  Iterations: {result.iterations}")
+    click.echo(f"  Final loss: {result.metadata.get('final_loss', 'N/A')}")
+    click.echo(f"  Latent shape: {result.latent.shape}")
+
+
 def _generate_html_report(title: str, data: dict, stats: dict) -> str:
     """Generate simple HTML report."""
     from datetime import datetime

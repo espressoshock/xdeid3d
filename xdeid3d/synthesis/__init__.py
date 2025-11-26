@@ -23,6 +23,15 @@ from xdeid3d.synthesis.rendering import (
     RenderConfig,
     render_mesh_to_image,
 )
+from xdeid3d.synthesis.projector import (
+    ProjectorProtocol,
+    ProjectionResult,
+    ProjectionConfig,
+    BaseProjector,
+    LatentProjector,
+    PTIProjector,
+    create_projector,
+)
 
 __all__ = [
     # Camera utilities
@@ -40,4 +49,12 @@ __all__ = [
     "BasicRenderer",
     "RenderConfig",
     "render_mesh_to_image",
+    # Projector
+    "ProjectorProtocol",
+    "ProjectionResult",
+    "ProjectionConfig",
+    "BaseProjector",
+    "LatentProjector",
+    "PTIProjector",
+    "create_projector",
 ]
