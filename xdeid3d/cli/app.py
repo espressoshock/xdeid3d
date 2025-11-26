@@ -20,6 +20,7 @@ from xdeid3d.cli.utils import (
 from xdeid3d.cli.commands import generate as generate_commands
 from xdeid3d.cli.commands import evaluate as evaluate_commands
 from xdeid3d.cli.commands import benchmark as benchmark_commands
+from xdeid3d.cli.commands import utils as utils_commands
 
 # Create main CLI group
 @click.group()
@@ -240,6 +241,7 @@ def config_validate(ctx: click.Context, config_file: str) -> None:
 cli.add_command(evaluate_commands)
 cli.add_command(generate_commands)
 cli.add_command(benchmark_commands)
+cli.add_command(utils_commands)
 
 
 def main() -> int:
