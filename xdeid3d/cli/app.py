@@ -284,6 +284,35 @@ def viewer(ctx: click.Context, experiments_dir: str, port: int, host: str) -> No
     app.run(debug=config.debug, host=host, port=port)
 
 
+@cli.command()
+@click.option(
+    "-p", "--port",
+    type=int,
+    default=8000,
+    help="Port to run GUI on (default: 8000)"
+)
+@click.option(
+    "--host",
+    type=str,
+    default="0.0.0.0",
+    help="Host to bind to (default: 0.0.0.0)"
+)
+@click.pass_context
+def gui(ctx: click.Context, port: int, host: str) -> None:
+    """Launch the interactive GUI for evaluation and visualization."""
+    from xdeid3d.gui import run_gui
+
+    click.echo("Starting X-DeID3D Interactive GUI")
+    click.echo(f"Access the application at: http://localhost:{port}")
+    click.echo(f"API documentation at: http://localhost:{port}/docs")
+
+    run_gui(
+        host=host,
+        port=port,
+        debug=ctx.obj.get("verbose", 0) > 0,
+    )
+
+
 def main() -> int:
     """Main entry point for CLI."""
     try:
