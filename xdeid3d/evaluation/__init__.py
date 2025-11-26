@@ -26,6 +26,13 @@ from xdeid3d.evaluation.providers import (
     PairedDirectorySampleProvider,
     FrameSequenceProvider,
 )
+from xdeid3d.evaluation.modes import (
+    EvaluationMode,
+    MetricSuite,
+    SingleSampleMode,
+    AggregateMode,
+    SphericalMode,
+)
 
 __all__ = [
     # Data structures
@@ -41,4 +48,10 @@ __all__ = [
     "VideoSampleProvider",
     "PairedDirectorySampleProvider",
     "FrameSequenceProvider",
+    # Evaluation modes
+    "EvaluationMode",
+    "MetricSuite",
+    "SingleSampleMode",
+    "AggregateMode",
+    "SphericalMode",
 ]
