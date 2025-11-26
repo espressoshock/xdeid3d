@@ -18,6 +18,7 @@ from xdeid3d.cli.utils import (
     get_device,
 )
 from xdeid3d.cli.commands import generate as generate_commands
+from xdeid3d.cli.commands import evaluate as evaluate_commands
 
 # Create main CLI group
 @click.group()
@@ -234,14 +235,8 @@ def config_validate(ctx: click.Context, config_file: str) -> None:
 # Placeholder command groups for other commands
 # These will be implemented in subsequent commits
 
-@cli.group()
-@click.pass_context
-def evaluate(ctx: click.Context) -> None:
-    """Run evaluation on anonymized data."""
-    pass
-
-
-# Add generate commands from commands module
+# Add command groups from commands module
+cli.add_command(evaluate_commands)
 cli.add_command(generate_commands)
 
 
