@@ -8,11 +8,13 @@ of anonymization evaluation results, including:
 - Colormap utilities for consistent visualization
 - 2D and 3D projection methods
 - 3D mesh export with vertex coloring
+- Publication-quality figure generation
 
 Sub-modules:
     - heatmaps: Spherical heatmap generation and interpolation
     - colormaps: Color mapping utilities
     - mesh: 3D mesh export with vertex colors
+    - figures: Figure and plot generation
 """
 
 from xdeid3d.visualization.colormaps import (
@@ -36,6 +38,15 @@ from xdeid3d.visualization.mesh import (
     read_ply,
     vertex_scores_from_angles,
 )
+from xdeid3d.visualization.figures import (
+    FigureGenerator,
+    FigureConfig,
+    create_metric_plot,
+    create_distribution_plot,
+    create_comparison_grid,
+    create_summary_figure,
+    save_figure,
+)
 
 __all__ = [
     # Colormaps
@@ -56,4 +67,12 @@ __all__ = [
     "write_ply",
     "read_ply",
     "vertex_scores_from_angles",
+    # Figures
+    "FigureGenerator",
+    "FigureConfig",
+    "create_metric_plot",
+    "create_distribution_plot",
+    "create_comparison_grid",
+    "create_summary_figure",
+    "save_figure",
 ]
