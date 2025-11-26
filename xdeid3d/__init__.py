@@ -1,0 +1,50 @@
+"""
+X-DeID3D: Explainable 3D Auditing Framework for Face De-identification Systems.
+
+This package provides tools for evaluating face anonymization systems using
+continuous 3D explanations based on kernel regression on spherical manifolds.
+"""
+
+__version__ = "0.1.0"
+__author__ = "X-DeID3D Contributors"
+
+# Lazy imports to avoid circular dependencies and heavy imports at startup
+def __getattr__(name: str):
+    """Lazy import module attributes."""
+    if name == "geometry":
+        from xdeid3d.core import geometry
+        return geometry
+    elif name == "regression":
+        from xdeid3d.core import regression
+        return regression
+    elif name == "BaseAnonymizer":
+        from xdeid3d.anonymizers.base import BaseAnonymizer
+        return BaseAnonymizer
+    elif name == "AnonymizerRegistry":
+        from xdeid3d.anonymizers.registry import AnonymizerRegistry
+        return AnonymizerRegistry
+    elif name == "BaseMetric":
+        from xdeid3d.metrics.base import BaseMetric
+        return BaseMetric
+    elif name == "MetricRegistry":
+        from xdeid3d.metrics.registry import MetricRegistry
+        return MetricRegistry
+    elif name == "EvaluationPipeline":
+        from xdeid3d.evaluation.pipeline import EvaluationPipeline
+        return EvaluationPipeline
+    elif name == "Config":
+        from xdeid3d.config.schema import Config
+        return Config
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+__all__ = [
+    "__version__",
+    "geometry",
+    "regression",
+    "BaseAnonymizer",
+    "AnonymizerRegistry",
+    "BaseMetric",
+    "MetricRegistry",
+    "EvaluationPipeline",
+    "Config",
+]

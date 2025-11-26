@@ -1,0 +1,124 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xdeid3d"
+version = "0.1.0"
+description = "Explainable 3D Auditing Framework for Face De-identification Systems"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "X-DeID3D Contributors"}
+]
+keywords = [
+    "face-anonymization",
+    "explainability",
+    "3d-visualization",
+    "kernel-regression",
+    "privacy",
+    "auditing"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.21",
+    "scipy>=1.7",
+    "pillow>=9.0",
+    "imageio>=2.9",
+    "imageio-ffmpeg",
+    "scikit-image>=0.19",
+    "trimesh>=3.9",
+    "plyfile>=0.7",
+    "typer>=0.9",
+    "rich>=13.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "tomli>=2.0;python_version<'3.11'",
+    "tqdm>=4.62",
+]
+
+[project.optional-dependencies]
+gui = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "websockets>=11",
+    "python-multipart>=0.0.6",
+]
+viewer = [
+    "flask>=2.3",
+    "flask-cors>=4.0",
+]
+metrics = [
+    "insightface>=0.7",
+    "lpips>=0.1",
+    "onnxruntime>=1.15",
+]
+all = [
+    "xdeid3d[gui,viewer,metrics]",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1",
+    "mypy>=1.0",
+    "pre-commit>=3.0",
+]
+
+[project.scripts]
+xdeid3d = "xdeid3d.cli:app"
+
+[project.entry-points."xdeid3d.anonymizers"]
+# Example: third-party anonymizers can register here
+# mymethod = "mypackage.anonymizer:MyAnonymizer"
+
+[project.entry-points."xdeid3d.metrics"]
+# Example: third-party metrics can register here
+# mymetric = "mypackage.metric:MyMetric"
+
+[project.urls]
+Homepage = "https://github.com/espressoshock/xdeid3d"
+Documentation = "https://github.com/espressoshock/xdeid3d#readme"
+Repository = "https://github.com/espressoshock/xdeid3d"
+Issues = "https://github.com/espressoshock/xdeid3d/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["xdeid3d*"]
+
+[tool.setuptools.package-data]
+xdeid3d = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=xdeid3d --cov-report=term-missing"
