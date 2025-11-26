@@ -17,6 +17,7 @@ from xdeid3d.cli.utils import (
     validate_path,
     get_device,
 )
+from xdeid3d.cli.commands import generate as generate_commands
 
 # Create main CLI group
 @click.group()
@@ -240,11 +241,8 @@ def evaluate(ctx: click.Context) -> None:
     pass
 
 
-@cli.group()
-@click.pass_context
-def generate(ctx: click.Context) -> None:
-    """Generate synthetic data and visualizations."""
-    pass
+# Add generate commands from commands module
+cli.add_command(generate_commands)
 
 
 @cli.group()
