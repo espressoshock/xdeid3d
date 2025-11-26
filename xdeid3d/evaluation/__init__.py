@@ -33,6 +33,11 @@ from xdeid3d.evaluation.modes import (
     AggregateMode,
     SphericalMode,
 )
+from xdeid3d.evaluation.pipeline import (
+    EvaluationPipeline,
+    PipelineConfig,
+    PipelineResult,
+)
 
 __all__ = [
     # Data structures
@@ -54,4 +59,8 @@ __all__ = [
     "SingleSampleMode",
     "AggregateMode",
     "SphericalMode",
+    # Pipeline
+    "EvaluationPipeline",
+    "PipelineConfig",
+    "PipelineResult",
 ]
