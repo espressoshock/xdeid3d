@@ -19,6 +19,7 @@ from xdeid3d.cli.utils import (
 )
 from xdeid3d.cli.commands import generate as generate_commands
 from xdeid3d.cli.commands import evaluate as evaluate_commands
+from xdeid3d.cli.commands import benchmark as benchmark_commands
 
 # Create main CLI group
 @click.group()
@@ -238,13 +239,7 @@ def config_validate(ctx: click.Context, config_file: str) -> None:
 # Add command groups from commands module
 cli.add_command(evaluate_commands)
 cli.add_command(generate_commands)
-
-
-@cli.group()
-@click.pass_context
-def benchmark(ctx: click.Context) -> None:
-    """Run performance benchmarks."""
-    pass
+cli.add_command(benchmark_commands)
 
 
 def main() -> int:
