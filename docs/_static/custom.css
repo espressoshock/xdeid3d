@@ -1,0 +1,49 @@
+/* Custom styles for X-DeID3D documentation */
+
+/* Code block styling */
+.highlight pre {
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+/* API documentation styling */
+dl.py.class > dt,
+dl.py.function > dt,
+dl.py.method > dt {
+    background: #f8f8f8;
+    padding: 8px 12px;
+    border-left: 3px solid #2980b9;
+    margin-bottom: 8px;
+}
+
+/* Parameter list styling */
+dl.field-list > dt {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Note/warning boxes */
+div.admonition {
+    border-radius: 4px;
+}
+
+/* Search result highlighting */
+span.highlighted {
+    background: #ffd54f;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+/* Responsive tables */
+table.docutils {
+    width: 100%;
+}
+
+/* Version badge */
+.version-badge {
+    background: #27ae60;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
