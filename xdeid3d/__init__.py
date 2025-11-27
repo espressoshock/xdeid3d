@@ -44,6 +44,16 @@ def __getattr__(name: str):
     elif name == "BasicRenderer":
         from xdeid3d.synthesis.rendering import BasicRenderer
         return BasicRenderer
+    elif name == "spherehead":
+        from xdeid3d.spherehead import __init__ as _spherehead_init
+        import xdeid3d.spherehead
+        return xdeid3d.spherehead
+    elif name == "TriPlaneGenerator":
+        from xdeid3d.spherehead import TriPlaneGenerator
+        return TriPlaneGenerator
+    elif name == "load_network":
+        from xdeid3d.spherehead import load_network
+        return load_network
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
@@ -59,4 +69,8 @@ __all__ = [
     "synthesis",
     "CameraPoseSampler",
     "BasicRenderer",
+    # SphereHead synthesis engine
+    "spherehead",
+    "TriPlaneGenerator",
+    "load_network",
 ]
