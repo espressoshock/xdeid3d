@@ -40,7 +40,7 @@ npm install
 npm run dev
 ```
 
-✅ Frontend running at: **http://localhost:5173**
+✅ Frontend running at: **http://localhost:5001**
 
 ### 3. Open in Browser
 
@@ -183,13 +183,4 @@ When you open the app, you should see:
 
 ---
 
-## 🆘 Need Help?
 
-See detailed documentation:
-- `README.md` - Overview
-- `DEVELOPMENT.md` - Complete development guide
-- `../CLAUDE.md` - Project architecture
-
----
-
-Enjoy exploring the X-DeID3D GUI! 🎨
