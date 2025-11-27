@@ -6,6 +6,11 @@
 [![CUDA](https://img.shields.io/badge/CUDA-11.3+-76B900.svg)](https://developer.nvidia.com/cuda-toolkit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+
+<p align="center">
+  <img src="assets/hero-0.png" width="100%" alt="X-DeID3D: Explainable 3D Auditing for Face De-identification"/>
+</p>
+
 **Explainable 3D Auditing Framework for Face De-identification Systems**
 
 X-DeID3D is a mathematically rigorous evaluation framework that provides continuous 3D explanations for face anonymization performance across viewing angles. It transforms sparse, discrete performance measurements into dense, continuous 3D heatmap visualizations using kernel regression on spherical manifolds (S²).
@@ -130,6 +135,66 @@ xdeid3d/
 ├── config/             # Configuration management
 ├── cli/                # Command-line interface
 └── api/                # REST API (viewer, GUI)
+```
+
+## Interactive Studio & Experiments Viewer
+
+X-DeID3D includes two interactive applications for exploring 3D explanations and auditing results.
+
+### Interactive Studio (GUI)
+
+A real-time exploration tool for generating and analyzing 3D de-identification explanations.
+
+<p align="center">
+  <img src="assets/gui-anatomy.png" width="80%" alt="GUI Anatomy - Interface Overview"/>
+</p>
+
+**3D Volume Visualization**: Explore identity distance heatmaps mapped onto 3D head geometry.
+
+<p align="center">
+  <img src="assets/gui-3dvol.png" width="80%" alt="3D Volume Heatmap Visualization"/>
+</p>
+
+**Generation Controls**: Configure synthesis parameters, sampling density, and anonymizer settings.
+
+<p align="center">
+  <img src="assets/gui-gent.png" width="80%" alt="Generation Tab"/>
+</p>
+
+**Ablation Studies**: Compare different anonymizers and parameter configurations side-by-side.
+
+<p align="center">
+  <img src="assets/gui-ablation.png" width="80%" alt="Ablation Study Interface"/>
+</p>
+
+### Experiments Viewer
+
+A web-based dashboard for browsing batch evaluation results and comparing experiments.
+
+<p align="center">
+  <img src="assets/viewer-anatomy.png" width="80%" alt="Experiments Viewer Overview"/>
+</p>
+
+**Identity Analysis**: Detailed per-frame identity distance metrics with statistical summaries.
+
+<p align="center">
+  <img src="assets/viewer-ia.png" width="80%" alt="Identity Analysis View"/>
+</p>
+
+**3D Color-Mapped Results**: Interactive 3D meshes with performance metrics mapped to vertex colors.
+
+<p align="center">
+  <img src="assets/viewer-ia3dc.png" width="80%" alt="3D Color-Mapped Identity Analysis"/>
+</p>
+
+Launch the applications:
+
+```bash
+# Interactive Studio (requires xdeid3d[gui])
+xdeid3d gui
+
+# Experiments Viewer (web-based)
+xdeid3d viewer --port 5001
 ```
 
 ## Citation
