@@ -96,7 +96,7 @@ Repository = "https://github.com/espressoshock/xdeid3d"
 Issues = "https://github.com/espressoshock/xdeid3d/issues"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["xdeid3d*"]
 
 [tool.setuptools.package-data]
