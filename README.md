@@ -1,5 +1,11 @@
 # X-DeID3D
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-1.11+-ee4c2c.svg)](https://pytorch.org/)
+[![CUDA](https://img.shields.io/badge/CUDA-11.3+-76B900.svg)](https://developer.nvidia.com/cuda-toolkit)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 **Explainable 3D Auditing Framework for Face De-identification Systems**
 
 X-DeID3D is a mathematically rigorous evaluation framework that provides continuous 3D explanations for face anonymization performance across viewing angles. It transforms sparse, discrete performance measurements into dense, continuous 3D heatmap visualizations using kernel regression on spherical manifolds (S²).
