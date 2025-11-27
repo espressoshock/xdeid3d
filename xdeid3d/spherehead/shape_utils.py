@@ -22,7 +22,6 @@ Ex.
 
 
 import time
-import plyfile
 import glob
 import logging
 import numpy as np
@@ -30,11 +29,33 @@ import os
 import random
 import torch
 import torch.utils.data
-import trimesh
-import skimage.measure
 import argparse
-import mrcfile
 from tqdm import tqdm
+
+# Optional dependencies for 3D mesh operations
+try:
+    import plyfile
+    PLYFILE_AVAILABLE = True
+except ImportError:
+    PLYFILE_AVAILABLE = False
+
+try:
+    import trimesh
+    TRIMESH_AVAILABLE = True
+except ImportError:
+    TRIMESH_AVAILABLE = False
+
+try:
+    import skimage.measure
+    SKIMAGE_AVAILABLE = True
+except ImportError:
+    SKIMAGE_AVAILABLE = False
+
+try:
+    import mrcfile
+    MRCFILE_AVAILABLE = True
+except ImportError:
+    MRCFILE_AVAILABLE = False
         
 
 def convert_sdf_samples_to_ply(
