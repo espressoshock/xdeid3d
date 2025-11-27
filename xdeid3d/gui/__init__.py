@@ -1,10 +1,9 @@
+# Copyright 2024 X-DeID3D Authors
+# SPDX-License-Identifier: Apache-2.0
 """
-GUI application for X-DeID3D.
+X-DeID3D Interactive GUI
 
-FastAPI-based web application for interactive evaluation
-and visualization of face anonymization systems.
+FastAPI-based web application for interactive 3D identity auditing.
 """
 
-from xdeid3d.gui.app import create_app, GUIConfig, run_gui
-
-__all__ = ["create_app", "GUIConfig", "run_gui"]
+__all__ = []

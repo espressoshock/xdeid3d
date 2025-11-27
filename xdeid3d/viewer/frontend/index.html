@@ -4,409 +4,751 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>X-DeID3D Experiments Viewer</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- Three.js via CDN with importmap -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            min-height: 100vh;
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
         }
-
-        header {
-            background: #16213e;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #0f3460;
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
         }
-
-        header h1 {
-            font-size: 1.5rem;
-            color: #e94560;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
-
-        .container {
-            display: flex;
-            min-height: calc(100vh - 60px);
-        }
-
+        
+        /* Sidebar transitions */
         .sidebar {
-            width: 300px;
-            background: #16213e;
-            padding: 1rem;
-            overflow-y: auto;
-            border-right: 1px solid #0f3460;
+            transition: width 0.3s ease;
         }
-
-        .main {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto;
+        .sidebar.collapsed {
+            width: 64px;
         }
-
-        .experiment-list {
-            list-style: none;
+        .sidebar.expanded {
+            width: 280px;
         }
-
-        .experiment-item {
-            padding: 0.75rem 1rem;
-            margin: 0.25rem 0;
-            background: #0f3460;
-            border-radius: 4px;
+        
+        /* Hide/show elements based on sidebar state */
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-seed-inputs,
+        .sidebar.collapsed .sidebar-view-buttons {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-icon-only {
+            display: block !important;
+        }
+        .sidebar.collapsed .sidebar-item {
+            justify-content: center;
+        }
+        .sidebar.collapsed #totalCount,
+        .sidebar.collapsed .sidebar-count {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-content {
+            padding: 0.5rem;
+        }
+        
+        /* Center icons when collapsed */
+        .sidebar.collapsed .sidebar-icon {
+            margin: 0 auto;
+        }
+        .sidebar.collapsed .config-filter-btn {
+            padding: 0.75rem 0.5rem;
+            justify-content: center;
+        }
+        
+        /* Tile hover effect */
+        .experiment-tile {
+            transition: all 0.3s ease;
             cursor: pointer;
-            transition: background 0.2s;
+            position: relative;
         }
-
-        .experiment-item:hover {
-            background: #1a4a7e;
+        .experiment-tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 10;
         }
-
-        .experiment-item.active {
-            background: #e94560;
+        .experiment-tile.selected {
+            ring: 3px;
+            ring-color: #4f46e5;
         }
-
-        .experiment-item .cfg {
-            font-weight: bold;
+        
+        /* Ensure square aspect ratio */
+        .aspect-square {
+            aspect-ratio: 1 / 1;
         }
-
-        .experiment-item .seed {
-            font-size: 0.9rem;
-            opacity: 0.8;
+        
+        /* Video preview */
+        .video-preview {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
         }
-
-        .experiment-item .badges {
-            margin-top: 0.25rem;
+        
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
         }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            font-size: 0.7rem;
-            border-radius: 3px;
-            margin-right: 4px;
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
-
-        .badge.video { background: #4a6fa5; }
-        .badge.metrics { background: #4a9f4a; }
-        .badge.heatmap { background: #9f4a9f; }
-
-        .detail-section {
-            background: #16213e;
-            padding: 1.5rem;
+        
+        /* Compact metric badge */
+        .metric-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .metric-good { background-color: #10b981; }
+        .metric-medium { background-color: #f59e0b; }
+        .metric-poor { background-color: #ef4444; }
+        
+        /* Custom video controls */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-webkit-slider-track {
+            background: #374151;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #4f46e5;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            margin-top: -6px;
+        }
+        
+        input[type="range"]::-moz-range-track {
+            background: #374151;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            background: #4f46e5;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            border: none;
+        }
+        
+        /* Video option radio buttons */
+        .video-option {
+            display: block;
+            position: relative;
+            padding: 12px 16px 12px 48px;
+            cursor: pointer;
+            user-select: none;
+            border: 2px solid #e5e7eb;
             border-radius: 8px;
-            margin-bottom: 1.5rem;
+            transition: all 0.2s;
         }
-
-        .detail-section h2 {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            color: #e94560;
-            border-bottom: 1px solid #0f3460;
-            padding-bottom: 0.5rem;
+        
+        .video-option:hover {
+            border-color: #d1d5db;
+            background-color: #f9fafb;
         }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
+        
+        .video-option.selected {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
         }
-
-        .metric-card {
-            background: #0f3460;
-            padding: 1rem;
-            border-radius: 4px;
+        
+        .video-option input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
         }
-
-        .metric-card .name {
-            font-size: 0.8rem;
-            opacity: 0.8;
-            margin-bottom: 0.25rem;
+        
+        .video-option .radio-dot {
+            position: absolute;
+            top: 50%;
+            left: 16px;
+            transform: translateY(-50%);
+            height: 20px;
+            width: 20px;
+            background-color: white;
+            border-radius: 50%;
+            border: 2px solid #d1d5db;
+            transition: all 0.2s;
         }
-
-        .metric-card .value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #e94560;
+        
+        .video-option:hover .radio-dot {
+            border-color: #9ca3af;
         }
-
-        .media-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
+        
+        .video-option input:checked ~ .radio-dot {
+            border-color: #4f46e5;
         }
-
-        .media-item {
-            background: #0f3460;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .media-item video,
-        .media-item img {
-            width: 100%;
+        
+        .video-option input:checked ~ .radio-dot:after {
+            content: "";
+            position: absolute;
             display: block;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4f46e5;
         }
-
-        .media-item .caption {
-            padding: 0.5rem;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            opacity: 0.6;
-        }
-
-        .error {
-            color: #e94560;
-            padding: 1rem;
-            background: rgba(233, 69, 96, 0.1);
-            border-radius: 4px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            opacity: 0.6;
-        }
-
-        .search-box {
+        
+        /* Timeline styling */
+        #videoSeeker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            -webkit-appearance: none;
+            appearance: none;
             width: 100%;
-            padding: 0.75rem;
-            background: #0f3460;
-            border: 1px solid #1a4a7e;
-            border-radius: 4px;
-            color: #eee;
-            margin-bottom: 1rem;
+            height: 100%;
+            background: transparent;
+            outline: none;
+            cursor: pointer;
+            z-index: 2;
         }
-
-        .search-box::placeholder {
-            color: #888;
+        
+        /* Track styling - transparent since we use custom progress bar */
+        #videoSeeker::-webkit-slider-track {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border-radius: 3px;
         }
-
-        .filter-group {
-            margin-bottom: 1rem;
+        
+        #videoSeeker::-moz-range-track {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border-radius: 3px;
         }
-
-        .filter-group label {
+        
+        /* Thumb styling */
+        #videoSeeker::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border: 3px solid #4f46e5;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 3;
+        }
+        
+        #videoSeeker::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: white;
+            border: 3px solid #4f46e5;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 3;
+        }
+        
+        #videoSeeker::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+        
+        #videoSeeker::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+        
+        /* Progress fill styling */
+        .video-progress-wrapper {
+            position: relative;
+            width: 100%;
+            height: 6px;
+            margin: 12px 0;
+        }
+        
+        .video-progress-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+        
+        .video-progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: #4f46e5;
+            border-radius: 3px;
+        }
+        
+        /* Dynamic video sizing */
+        #videoWrapper {
+            background: #000;
+        }
+        
+        #analysisVideo {
             display: block;
-            font-size: 0.9rem;
-            margin-bottom: 0.25rem;
-            opacity: 0.8;
-        }
-
-        select {
             width: 100%;
-            padding: 0.5rem;
-            background: #0f3460;
-            border: 1px solid #1a4a7e;
-            border-radius: 4px;
-            color: #eee;
+            height: 100%;
         }
+        
+        /* Progress bar visual enhancement */
+        #videoSeeker {
+            background: transparent;
+            outline: none;
+        }
+        
+        #videoSeeker:focus {
+            outline: none;
+        }
+        
+        /* Custom checkbox styles */
+        .custom-checkbox {
+            display: none;
+        }
+        
+        /* Grid container with consistent sizing */
+        #tilesContainer {
+            transition: all 0.3s ease;
+        }
+        
+        /* Prevent layout shift when detail panel opens */
+        #experimentGrid {
+            min-width: 0; /* Allow flexbox to shrink properly */
+        }
+        
+        /* Smooth transitions for tiles */
+        .experiment-tile {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        /* Detail panel overlay mode */
+        #detailPanel.show {
+            transform: translateX(0);
+        }
+        
+        /* Backdrop for detail panel */
+        .detail-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 30;
+            transition: opacity 0.3s ease;
+        }
+        
+        .custom-checkbox:checked + .checkbox-display .checkbox-bg {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        
+        .custom-checkbox:checked + .checkbox-display .checkbox-check {
+            opacity: 1;
+        }
+        
+        /* 3D viewer tooltip */
+        #threeDViewer .tooltip {
+            transition: opacity 0.2s;
+        }
+        
     </style>
 </head>
-<body>
-    <header>
-        <h1>X-DeID3D Experiments Viewer</h1>
-    </header>
-
-    <div class="container">
-        <aside class="sidebar">
-            <input type="text" class="search-box" id="search" placeholder="Search experiments...">
-
-            <div class="filter-group">
-                <label>Configuration</label>
-                <select id="cfg-filter">
-                    <option value="">All Configurations</option>
-                </select>
+<body class="bg-gray-100 overflow-hidden">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar expanded bg-white shadow-lg flex flex-col">
+            <!-- Toggle Button -->
+            <button id="sidebarToggle" class="flex items-center justify-center h-14 hover:bg-gray-50 transition-colors">
+                <i class="fas fa-bars text-gray-600 text-lg"></i>
+            </button>
+            
+            <!-- Logo/Title -->
+            <div class="px-4 pb-4 border-b sidebar-content">
+                <h1 class="text-xl font-bold text-gray-800 flex items-center justify-center lg:justify-start">
+                    <i class="fas fa-chart-line text-indigo-600 text-2xl sidebar-icon"></i>
+                    <span class="sidebar-text ml-2">Synth Analyzer</span>
+                </h1>
             </div>
-
-            <ul class="experiment-list" id="experiment-list">
-                <li class="loading">Loading experiments...</li>
-            </ul>
+            
+            <!-- Filters -->
+            <div class="flex-1 overflow-y-auto p-4 sidebar-content">
+                <!-- Stats Summary -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-3 sidebar-text">Overview</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded sidebar-item">
+                            <div class="flex items-center">
+                                <i class="fas fa-chart-bar text-gray-600 sidebar-icon"></i>
+                                <span class="text-sm text-gray-600 sidebar-text ml-3">Total</span>
+                            </div>
+                            <span id="totalCount" class="text-sm font-bold">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Configuration Filter -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-3 sidebar-text">Configuration</h3>
+                    <div class="space-y-1" id="configFilters">
+                        <!-- Config buttons will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Seed Range -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-3 sidebar-text">Seed Range</h3>
+                    <div class="sidebar-seed-inputs">
+                        <div class="flex gap-2">
+                            <input type="number" id="seedMin" placeholder="Min" 
+                                   class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <input type="number" id="seedMax" placeholder="Max" 
+                                   class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <div class="sidebar-icon-only hidden">
+                        <button class="w-full p-2 text-gray-600 hover:bg-gray-100 rounded" title="Seed Range">
+                            <i class="fas fa-hashtag"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- View Options -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-3 sidebar-text">View</h3>
+                    <div class="sidebar-view-buttons">
+                        <div class="grid grid-cols-4 gap-1">
+                            <button class="tile-size-btn p-2 text-xs bg-gray-100 rounded hover:bg-gray-200" data-size="small">S</button>
+                            <button class="tile-size-btn p-2 text-xs bg-indigo-600 text-white rounded" data-size="medium">M</button>
+                            <button class="tile-size-btn p-2 text-xs bg-gray-100 rounded hover:bg-gray-200" data-size="large">L</button>
+                            <button class="tile-size-btn p-2 text-xs bg-gray-100 rounded hover:bg-gray-200" data-size="xl">XL</button>
+                        </div>
+                    </div>
+                    <div class="sidebar-icon-only hidden">
+                        <button class="w-full p-2 text-gray-600 hover:bg-gray-100 rounded" title="View Size">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-4 border-t sidebar-content">
+                <button id="refreshBtn" class="w-full py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors text-sm flex items-center justify-center">
+                    <i class="fas fa-sync-alt sidebar-icon"></i>
+                    <span class="sidebar-text ml-2">Refresh</span>
+                </button>
+            </div>
         </aside>
-
-        <main class="main" id="main-content">
-            <div class="empty-state">
-                <h2>Welcome to X-DeID3D Experiments Viewer</h2>
-                <p>Select an experiment from the sidebar to view details.</p>
+        
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col">
+            <!-- Header Bar -->
+            <header class="bg-white shadow-sm px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h2 id="viewTitle" class="text-lg font-semibold text-gray-800">All Experiments</h2>
+                    <span id="filterBadge" class="text-sm text-gray-500"></span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="gridViewBtn" class="p-2 text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button id="listViewBtn" class="p-2 text-gray-400 hover:text-gray-800">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Content Area -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Experiment Grid -->
+                <div id="experimentGrid" class="flex-1 overflow-y-auto p-6 transition-all duration-300">
+                    <div id="tilesContainer" class="grid gap-4 grid-cols-4 max-w-7xl mx-auto">
+                        <!-- Experiment tiles will be inserted here -->
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="loadingState" class="hidden flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                            <p class="mt-4 text-gray-600">Loading experiments...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyState" class="hidden flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">No experiments found</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detail Panel (Overlay Mode) -->
+                <div id="detailPanel" class="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl overflow-y-auto hidden transition-transform duration-300 transform translate-x-full z-40">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 id="detailTitle" class="text-lg font-semibold"></h3>
+                            <button id="closeDetailBtn" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="detailContent">
+                            <!-- Detail content will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Interactive Analysis View -->
+                <div id="interactiveAnalysis" class="absolute inset-0 bg-gray-50 hidden z-50">
+                    <div class="h-full flex flex-col">
+                        <!-- Header -->
+                        <div class="bg-white border-b px-6 py-4 flex items-center justify-between">
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-800">Interactive Analysis</h2>
+                                <p class="text-sm text-gray-600 mt-1" id="analysisSubtitle"></p>
+                            </div>
+                            <button id="closeAnalysisBtn" class="text-gray-400 hover:text-gray-600 p-2">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Main Content -->
+                        <div class="flex-1 flex">
+                            <!-- Visualization Container -->
+                            <div class="flex-1 flex flex-col">
+                                <!-- Video Container -->
+                                <div id="videoContainer" class="flex-1 flex items-center justify-center p-4" style="min-height: 0;">
+                                    <div id="videoWrapper" class="relative rounded-lg overflow-hidden shadow-2xl">
+                                        <video id="analysisVideo" muted preload="metadata">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </div>
+                                
+                                <!-- 3D Container (hidden by default) -->
+                                <div id="threeDContainer" class="flex-1 flex flex-col p-4 hidden">
+                                    <div class="flex-1 bg-gray-900 rounded-lg overflow-hidden shadow-2xl relative" id="threeDViewer">
+                                        <!-- Three.js canvas will be inserted here -->
+                                        
+                                        <!-- Colorbar -->
+                                        <div id="colorbar" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-95 rounded-lg shadow-lg p-3">
+                                            <div class="text-xs font-semibold text-gray-700 mb-2 text-center">
+                                                <div>Metric Value</div>
+                                                <div class="text-[10px] font-normal text-gray-500 mt-0.5">3D Color Scale</div>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <canvas id="colorbarCanvas" width="30" height="200"></canvas>
+                                                <div class="ml-2 flex flex-col justify-between h-[200px] text-xs text-gray-600">
+                                                    <div id="colorbarMax">1.0</div>
+                                                    <div id="colorbarMid">0.5</div>
+                                                    <div id="colorbarMin">0.0</div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 text-xs text-gray-500 text-center max-w-[100px]">
+                                                <div class="flex items-center justify-center space-x-1">
+                                                    <span class="text-yellow-500">Hot</span>
+                                                    <span>=</span>
+                                                    <span id="colorbarHotMeaning">High</span>
+                                                </div>
+                                                <div class="flex items-center justify-center space-x-1 mt-1">
+                                                    <span class="text-purple-600">Cold</span>
+                                                    <span>=</span>
+                                                    <span id="colorbarColdMeaning">Low</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Metric Info Panel -->
+                                        <div id="metricInfoPanel" class="absolute top-4 left-4 bg-white bg-opacity-98 rounded-lg shadow-xl p-4 max-w-sm hidden border border-gray-200">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <h3 id="metricName" class="text-lg font-semibold text-gray-800"></h3>
+                                                <button id="closeMetricInfo" class="text-gray-400 hover:text-gray-600 ml-2">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <p id="metricCategory" class="text-xs text-indigo-600 font-medium mb-2"></p>
+                                            <p id="metricDescription" class="text-sm text-gray-600 mb-3"></p>
+                                            <div class="space-y-2">
+                                                <div class="bg-gray-50 rounded p-2">
+                                                    <p class="text-xs font-semibold text-gray-700 mb-1">Interpretation:</p>
+                                                    <div id="metricInterpretation" class="text-xs space-y-1"></div>
+                                                </div>
+                                                <div id="metricDetails" class="text-xs text-gray-500 italic"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 3D Model Selector -->
+                                    <div class="mt-4 bg-white rounded-lg shadow-lg p-3 max-w-4xl mx-auto w-full">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center space-x-2">
+                                                <label class="text-sm font-semibold text-gray-700">Select Metric:</label>
+                                                <button id="metricInfoBtn" class="text-indigo-600 hover:text-indigo-700 transition-colors" title="Show metric information (Press 'i')">
+                                                    <i class="fas fa-info-circle"></i>
+                                                </button>
+                                            </div>
+                                            <select id="plySelector" class="px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                <!-- Options will be populated dynamically -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Controls Container -->
+                                <div id="videoControls" class="p-4">
+                                    <!-- Analysis Controls -->
+                                    <div class="bg-white rounded-lg shadow-lg p-3 max-w-4xl mx-auto w-full">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center space-x-4">
+                                            <!-- Frame Controls -->
+                                            <div class="flex items-center space-x-1">
+                                                <button id="prevFrameBtn" class="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded">
+                                                    <i class="fas fa-step-backward"></i>
+                                                </button>
+                                                <button id="playPauseBtn" class="p-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                <button id="nextFrameBtn" class="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded">
+                                                    <i class="fas fa-step-forward"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Frame Info -->
+                                            <div class="text-sm text-gray-600">
+                                                <span class="font-medium">Frame:</span>
+                                                <span id="currentFrame">0</span> / <span id="totalFrames">0</span>
+                                            </div>
+                                            
+                                            <!-- Loop Control -->
+                                            <label class="flex items-center text-sm text-gray-600 cursor-pointer group">
+                                                <input type="checkbox" id="loopVideo" class="custom-checkbox" checked>
+                                                <div class="checkbox-display relative w-5 h-5 mr-2">
+                                                    <div class="checkbox-bg block bg-white border-2 border-gray-300 rounded transition-all duration-200 w-5 h-5"></div>
+                                                    <svg class="checkbox-check absolute inset-0 w-5 h-5 text-white pointer-events-none transition-opacity duration-200 opacity-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                </div>
+                                                <span class="group-hover:text-gray-800 transition-colors">Loop</span>
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-4">
+                                            <!-- Speed Control -->
+                                            <div class="flex items-center space-x-2">
+                                                <label class="text-sm text-gray-600 font-medium">Speed:</label>
+                                                <select id="playbackSpeed" class="px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                                    <option value="0.25">0.25×</option>
+                                                    <option value="0.5">0.5×</option>
+                                                    <option value="1" selected>1×</option>
+                                                    <option value="2">2×</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <button id="fullscreenBtn" class="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded">
+                                                <i class="fas fa-expand"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Timeline -->
+                                    <div class="relative">
+                                        <div class="video-progress-wrapper">
+                                            <div class="video-progress-bg"></div>
+                                            <div id="videoProgressFill" class="video-progress-fill" style="width: 0%"></div>
+                                            <input type="range" id="videoSeeker" class="absolute inset-0 w-full cursor-pointer" min="0" max="100" value="0" step="0.1">
+                                        </div>
+                                        <div class="flex justify-between mt-1">
+                                            <span id="currentTime" class="text-xs text-gray-500">0:00</span>
+                                            <span id="duration" class="text-xs text-gray-500">0:00</span>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sidebar Panel -->
+                            <div class="w-80 bg-white border-l p-6 overflow-y-auto flex-shrink-0">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-6">Visualization Options</h3>
+                                
+                                <div class="space-y-3" id="videoOptions">
+                                    <!-- Video options will be inserted here -->
+                                </div>
+                                
+                                <div class="mt-8 pt-6 border-t">
+                                    <h4 class="font-semibold text-gray-700 mb-4">Experiment Details</h4>
+                                    <div id="analysisInfo" class="text-sm space-y-3">
+                                        <!-- Info will be inserted here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-8 pt-6 border-t">
+                                    <h4 class="font-semibold text-gray-700 mb-4">Export</h4>
+                                    <button class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors text-sm">
+                                        <i class="fas fa-download mr-2"></i>
+                                        Download Current Frame
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
-
-    <script>
-        // State
-        let experiments = [];
-        let currentExperiment = null;
-
-        // DOM elements
-        const experimentList = document.getElementById('experiment-list');
-        const mainContent = document.getElementById('main-content');
-        const searchBox = document.getElementById('search');
-        const cfgFilter = document.getElementById('cfg-filter');
-
-        // API calls
-        async function fetchExperiments() {
-            try {
-                const response = await fetch('/api/experiments');
-                const data = await response.json();
-                experiments = data.experiments || [];
-                updateExperimentList();
-                updateFilters();
-            } catch (error) {
-                experimentList.innerHTML = '<li class="error">Failed to load experiments</li>';
-                console.error('Error fetching experiments:', error);
-            }
-        }
-
-        async function fetchExperimentDetails(cfg, seed) {
-            try {
-                const response = await fetch(`/api/experiments/${cfg}/${seed}`);
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error('Error fetching experiment details:', error);
-                return null;
-            }
-        }
-
-        // UI updates
-        function updateFilters() {
-            const configs = [...new Set(experiments.map(e => e.cfg))];
-            cfgFilter.innerHTML = '<option value="">All Configurations</option>' +
-                configs.map(c => `<option value="${c}">${c}</option>`).join('');
-        }
-
-        function updateExperimentList() {
-            const searchTerm = searchBox.value.toLowerCase();
-            const selectedCfg = cfgFilter.value;
-
-            const filtered = experiments.filter(exp => {
-                const matchesSearch = exp.cfg.toLowerCase().includes(searchTerm) ||
-                    String(exp.seed).includes(searchTerm);
-                const matchesCfg = !selectedCfg || exp.cfg === selectedCfg;
-                return matchesSearch && matchesCfg;
-            });
-
-            if (filtered.length === 0) {
-                experimentList.innerHTML = '<li class="empty-state">No experiments found</li>';
-                return;
-            }
-
-            experimentList.innerHTML = filtered.map(exp => `
-                <li class="experiment-item ${currentExperiment?.cfg === exp.cfg && currentExperiment?.seed === exp.seed ? 'active' : ''}"
-                    data-cfg="${exp.cfg}" data-seed="${exp.seed}">
-                    <div class="cfg">${exp.cfg}</div>
-                    <div class="seed">Seed: ${exp.seed}</div>
-                    <div class="badges">
-                        ${exp.has_video ? '<span class="badge video">Video</span>' : ''}
-                        ${exp.has_metrics ? '<span class="badge metrics">Metrics</span>' : ''}
-                        ${exp.has_heatmap ? '<span class="badge heatmap">Heatmap</span>' : ''}
-                    </div>
-                </li>
-            `).join('');
-
-            // Add click handlers
-            document.querySelectorAll('.experiment-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const cfg = item.dataset.cfg;
-                    const seed = parseInt(item.dataset.seed);
-                    selectExperiment(cfg, seed);
-                });
-            });
-        }
-
-        async function selectExperiment(cfg, seed) {
-            mainContent.innerHTML = '<div class="loading">Loading experiment details...</div>';
-
-            const details = await fetchExperimentDetails(cfg, seed);
-            if (!details) {
-                mainContent.innerHTML = '<div class="error">Failed to load experiment details</div>';
-                return;
-            }
-
-            currentExperiment = { cfg, seed };
-            updateExperimentList();
-            renderExperimentDetails(details);
-        }
-
-        function renderExperimentDetails(details) {
-            let html = `
-                <div class="detail-section">
-                    <h2>${details.cfg} - Seed ${details.seed}</h2>
-                    <p>Path: ${details.path}</p>
-                </div>
-            `;
-
-            // Metrics
-            if (details.summary) {
-                html += `
-                    <div class="detail-section">
-                        <h2>Metrics Summary</h2>
-                        <div class="metrics-grid">
-                            ${Object.entries(details.summary).map(([name, stats]) => `
-                                <div class="metric-card">
-                                    <div class="name">${name}</div>
-                                    <div class="value">${stats.mean.toFixed(4)}</div>
-                                    <div class="name">± ${stats.std.toFixed(4)}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Videos
-            if (details.media?.videos?.length > 0) {
-                html += `
-                    <div class="detail-section">
-                        <h2>Videos</h2>
-                        <div class="media-grid">
-                            ${details.media.videos.map(path => `
-                                <div class="media-item">
-                                    <video controls>
-                                        <source src="/api/media/${path}" type="video/mp4">
-                                    </video>
-                                    <div class="caption">${path.split('/').pop()}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Images
-            if (details.media?.images?.length > 0) {
-                html += `
-                    <div class="detail-section">
-                        <h2>Images</h2>
-                        <div class="media-grid">
-                            ${details.media.images.slice(0, 12).map(path => `
-                                <div class="media-item">
-                                    <img src="/api/media/${path}" alt="${path}">
-                                    <div class="caption">${path.split('/').pop()}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            mainContent.innerHTML = html;
-        }
-
-        // Event listeners
-        searchBox.addEventListener('input', updateExperimentList);
-        cfgFilter.addEventListener('change', updateExperimentList);
-
-        // Initialize
-        fetchExperiments();
+    
+    <!-- JavaScript -->
+    <script src="js/app.js" type="module"></script>
+    <script type="module">
+        import { ThreeViewer } from './js/three-viewer.js';
+        import { getMetricInfo } from './js/metrics-info.js';
+        window.ThreeViewer = ThreeViewer;
+        window.getMetricInfo = getMetricInfo;
     </script>
 </body>
 </html>

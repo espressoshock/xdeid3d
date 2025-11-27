@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        #log {
+            background: #000;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        .log-line {
+            margin: 2px 0;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .info { color: #0af; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendPing()">Send Ping</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="clearLog()">Clear Log</button>
+    <div id="log"></div>
+
+    <script>
+        let ws = null;
+        const sessionId = `test-${Date.now()}`;
+        const wsUrl = `ws://localhost:8000/ws/generation/${sessionId}`;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(line);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function connect() {
+            if (ws && ws.readyState !== WebSocket.CLOSED) {
+                log('Already connected or connecting', 'error');
+                return;
+            }
+
+            log(`Connecting to: ${wsUrl}`, 'info');
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                log('✅ WebSocket OPEN', 'success');
+                log('Sending initial ping...', 'info');
+                ws.send(JSON.stringify({ type: 'ping' }));
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    log(`📩 Received: ${JSON.stringify(data)}`, 'success');
+                } catch (e) {
+                    log(`📩 Received (raw): ${event.data}`, 'info');
+                }
+            };
+
+            ws.onerror = (error) => {
+                log(`❌ Error: ${error}`, 'error');
+            };
+
+            ws.onclose = (event) => {
+                log(`🔴 CLOSED - Code: ${event.code}, Reason: "${event.reason}"`, 'error');
+                if (event.code !== 1000) {
+                    log('⚠️  Abnormal closure!', 'error');
+                }
+            };
+        }
+
+        function sendPing() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected', 'error');
+                return;
+            }
+            const msg = { type: 'ping' };
+            log(`📤 Sending: ${JSON.stringify(msg)}`, 'info');
+            ws.send(JSON.stringify(msg));
+        }
+
+        function disconnect() {
+            if (ws) {
+                log('Closing connection...', 'info');
+                ws.close(1000, 'Manual disconnect');
+                ws = null;
+            }
+        }
+
+        // Auto-connect on load
+        log('Page loaded. Click Connect to start.', 'info');
+    </script>
+</body>
+</html>

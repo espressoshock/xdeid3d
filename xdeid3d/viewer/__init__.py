@@ -1,10 +1,9 @@
+# Copyright 2024 X-DeID3D Authors
+# SPDX-License-Identifier: Apache-2.0
 """
-Experiments viewer for X-DeID3D.
+X-DeID3D Experiments Viewer
 
-Flask-based web application for browsing and comparing
-evaluation experiments and results.
+Web-based dashboard for viewing and analyzing 3D face anonymization experiments.
 """
 
-from xdeid3d.viewer.app import create_app, ViewerConfig
-
-__all__ = ["create_app", "ViewerConfig"]
+__all__ = []
